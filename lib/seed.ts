@@ -1,4 +1,15 @@
-import type { ActivityEntry, GymSettings, Member, NotificationEntry, PaymentRecord, Plan, PaymentMethod } from "./types";
+import type {
+  ActivityEntry,
+  EquipmentCategory,
+  EquipmentCondition,
+  GymSettings,
+  InventoryItem,
+  Member,
+  NotificationEntry,
+  PaymentRecord,
+  Plan,
+  PaymentMethod,
+} from "./types";
 import { addDays, addMonths, PLAN_FEES, PLAN_MONTHS, daysUntil, formatCurrency, getMembershipStatus, uid } from "./utils";
 
 interface Seed {
@@ -103,12 +114,79 @@ function buildMember(seed: Seed, index: number, today: Date): { member: Member; 
   return { member, payments };
 }
 
+interface EquipmentSeed {
+  name: string;
+  category: EquipmentCategory;
+  quantity: number;
+  condition: EquipmentCondition;
+  location: string;
+  purchasedMonthsAgo: number;
+  lastServiceMonthsAgo?: number;
+  notes?: string;
+}
+
+const EQUIPMENT_SEEDS: EquipmentSeed[] = [
+  { name: "Treadmill", category: "Cardio", quantity: 4, condition: "Good", location: "Cardio Zone", purchasedMonthsAgo: 14, lastServiceMonthsAgo: 1 },
+  { name: "Elliptical Trainer", category: "Cardio", quantity: 3, condition: "Good", location: "Cardio Zone", purchasedMonthsAgo: 14, lastServiceMonthsAgo: 2 },
+  { name: "Stationary Bike", category: "Cardio", quantity: 5, condition: "Needs Repair", location: "Cardio Zone", purchasedMonthsAgo: 20, lastServiceMonthsAgo: 5, notes: "Unit #3 seat post is loose" },
+  { name: "Rowing Machine", category: "Cardio", quantity: 2, condition: "Good", location: "Cardio Zone", purchasedMonthsAgo: 9, lastServiceMonthsAgo: 1 },
+  { name: "Smith Machine", category: "Strength Machines", quantity: 1, condition: "Good", location: "Strength Floor", purchasedMonthsAgo: 18, lastServiceMonthsAgo: 3 },
+  { name: "Leg Press Machine", category: "Strength Machines", quantity: 1, condition: "Good", location: "Strength Floor", purchasedMonthsAgo: 18, lastServiceMonthsAgo: 3 },
+  { name: "Cable Crossover Machine", category: "Strength Machines", quantity: 1, condition: "Out of Service", location: "Strength Floor", purchasedMonthsAgo: 24, lastServiceMonthsAgo: 6, notes: "Cable snapped, waiting on replacement part" },
+  { name: "Lat Pulldown Machine", category: "Strength Machines", quantity: 1, condition: "Good", location: "Strength Floor", purchasedMonthsAgo: 12, lastServiceMonthsAgo: 2 },
+  { name: "Chest Press Machine", category: "Strength Machines", quantity: 1, condition: "Good", location: "Strength Floor", purchasedMonthsAgo: 12, lastServiceMonthsAgo: 2 },
+  { name: "Squat Rack", category: "Free Weights", quantity: 3, condition: "Good", location: "Free Weights Area", purchasedMonthsAgo: 16 },
+  { name: "Flat Bench", category: "Free Weights", quantity: 6, condition: "Good", location: "Free Weights Area", purchasedMonthsAgo: 16 },
+  { name: "Dumbbell Set (2.5–50kg)", category: "Free Weights", quantity: 1, condition: "Good", location: "Free Weights Area", purchasedMonthsAgo: 16 },
+  { name: "Olympic Barbell Set", category: "Free Weights", quantity: 8, condition: "Needs Repair", location: "Free Weights Area", purchasedMonthsAgo: 22, lastServiceMonthsAgo: 8, notes: "One bar bent, needs replacing" },
+  { name: "Kettlebell Set (4–24kg)", category: "Free Weights", quantity: 1, condition: "Good", location: "Free Weights Area", purchasedMonthsAgo: 10 },
+  { name: "Yoga Mats", category: "Accessories", quantity: 20, condition: "Good", location: "Studio Room", purchasedMonthsAgo: 6 },
+  { name: "Resistance Bands Set", category: "Accessories", quantity: 15, condition: "Good", location: "Free Weights Area", purchasedMonthsAgo: 4 },
+];
+
+function buildEquipment(seed: EquipmentSeed, index: number, today: Date): InventoryItem {
+  const purchaseDate = addMonths(today, -seed.purchasedMonthsAgo);
+  const maintenanceHistory: InventoryItem["maintenanceHistory"] = [];
+
+  if (seed.lastServiceMonthsAgo !== undefined) {
+    const lastServiceDate = addMonths(today, -seed.lastServiceMonthsAgo);
+    maintenanceHistory.push({
+      id: uid("maint"),
+      date: lastServiceDate.toISOString(),
+      note: seed.condition === "Good" ? "Routine inspection and servicing" : seed.notes ?? "Reported fault during inspection",
+      condition: seed.condition,
+    });
+    if (seed.lastServiceMonthsAgo > 3) {
+      maintenanceHistory.unshift({
+        id: uid("maint"),
+        date: addMonths(lastServiceDate, -3).toISOString(),
+        note: "Routine inspection and servicing",
+        condition: "Good",
+      });
+    }
+  }
+
+  return {
+    id: uid(`equip${index}`),
+    name: seed.name,
+    category: seed.category,
+    quantity: seed.quantity,
+    condition: seed.condition,
+    location: seed.location,
+    purchaseDate: purchaseDate.toISOString(),
+    lastServiceDate: maintenanceHistory[maintenanceHistory.length - 1]?.date,
+    notes: seed.condition !== "Good" ? seed.notes : undefined,
+    maintenanceHistory,
+  };
+}
+
 export function generateSeedData(): {
   members: Member[];
   payments: PaymentRecord[];
   activity: ActivityEntry[];
   notifications: NotificationEntry[];
   settings: GymSettings;
+  inventory: InventoryItem[];
 } {
   const today = new Date();
   const members: Member[] = [];
@@ -119,6 +197,8 @@ export function generateSeedData(): {
     members.push(member);
     payments.push(...memberPayments);
   });
+
+  const inventory: InventoryItem[] = EQUIPMENT_SEEDS.map((seed, index) => buildEquipment(seed, index, today));
 
   // A few payments dated earlier today so Today's Collections is never empty.
   const todaysPayers = members.slice(0, 3);
@@ -144,6 +224,7 @@ export function generateSeedData(): {
     { id: uid("act"), text: "Usman Khan joined the gym", timestamp: addDays(today, -1).toISOString(), kind: "joined" },
     { id: uid("act"), text: "Sana Malik paid Rs. 12,000", timestamp: addDays(today, -1).toISOString(), kind: "payment" },
     { id: uid("act"), text: "Zain Khan's membership expired", timestamp: addDays(today, -2).toISOString(), kind: "expired" },
+    { id: uid("act"), text: "Cable Crossover Machine flagged out of service", timestamp: addDays(today, -3).toISOString(), kind: "equipment" },
   ];
 
   const expiringCount = members.filter((m) => getMembershipStatus(m.expiryDate, today).status === "expiring").length;
@@ -160,6 +241,20 @@ export function generateSeedData(): {
     ...(expiringTodayMember
       ? [{ id: uid("ntf"), text: `${expiringTodayMember.name}'s membership expires today.`, timestamp: new Date(Date.now() - 4 * 60 * 60000).toISOString(), read: false, kind: "expiring" as const }]
       : []),
+    ...(() => {
+      const needsAttention = inventory.filter((i) => i.condition !== "Good").length;
+      return needsAttention > 0
+        ? [
+            {
+              id: uid("ntf"),
+              text: `${needsAttention} piece${needsAttention === 1 ? "" : "s"} of equipment need${needsAttention === 1 ? "s" : ""} attention.`,
+              timestamp: addDays(today, -3).toISOString(),
+              read: false,
+              kind: "equipment" as const,
+            },
+          ]
+        : [];
+    })(),
   ];
 
   const settings: GymSettings = {
@@ -172,5 +267,5 @@ export function generateSeedData(): {
     notifyPayments: true,
   };
 
-  return { members, payments, activity, notifications, settings };
+  return { members, payments, activity, notifications, settings, inventory };
 }

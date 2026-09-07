@@ -42,7 +42,7 @@ export interface Member {
   paymentHistory: PaymentRecord[];
 }
 
-export type ActivityKind = "renewal" | "payment" | "expired" | "joined" | "reminder";
+export type ActivityKind = "renewal" | "payment" | "expired" | "joined" | "reminder" | "equipment";
 
 export interface ActivityEntry {
   id: string;
@@ -51,7 +51,7 @@ export interface ActivityEntry {
   kind: ActivityKind;
 }
 
-export type NotificationKind = "expiring" | "expired" | "payment" | "info";
+export type NotificationKind = "expiring" | "expired" | "payment" | "equipment" | "info";
 
 export interface NotificationEntry {
   id: string;
@@ -72,11 +72,37 @@ export interface GymSettings {
   notifyPayments: boolean;
 }
 
+export type EquipmentCategory = "Cardio" | "Strength Machines" | "Free Weights" | "Accessories" | "Other";
+
+export type EquipmentCondition = "Good" | "Needs Repair" | "Out of Service";
+
+export interface MaintenanceRecord {
+  id: string;
+  date: string;
+  note: string;
+  cost?: number;
+  condition: EquipmentCondition;
+}
+
+export interface InventoryItem {
+  id: string;
+  name: string;
+  category: EquipmentCategory;
+  quantity: number;
+  condition: EquipmentCondition;
+  location?: string;
+  purchaseDate?: string;
+  lastServiceDate?: string;
+  notes?: string;
+  maintenanceHistory: MaintenanceRecord[];
+}
+
 export interface GymState {
   members: Member[];
   payments: PaymentRecord[];
   activity: ActivityEntry[];
   notifications: NotificationEntry[];
   settings: GymSettings;
+  inventory: InventoryItem[];
   hydrated: boolean;
 }

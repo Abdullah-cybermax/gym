@@ -3,8 +3,11 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type {
   ActivityEntry,
+  EquipmentCategory,
+  EquipmentCondition,
   GymSettings,
   GymState,
+  InventoryItem,
   Member,
   PaymentMethod,
   PaymentRecord,
@@ -23,6 +26,7 @@ function loadPersisted(): GymState | null {
     if (!raw) return null;
     const parsed = JSON.parse(raw) as GymState;
     if (!parsed.members || !parsed.settings) return null;
+    if (!parsed.inventory) parsed.inventory = [];
     return parsed;
   } catch {
     return null;
@@ -50,6 +54,16 @@ interface AddMemberInput {
   paymentStatus: PaymentStatus;
 }
 
+interface AddEquipmentInput {
+  name: string;
+  category: EquipmentCategory;
+  quantity: number;
+  condition: EquipmentCondition;
+  location?: string;
+  purchaseDate?: string;
+  notes?: string;
+}
+
 interface GymApi {
   state: GymState;
   addMember: (input: AddMemberInput) => Member;
@@ -62,6 +76,13 @@ interface GymApi {
   updateSettings: (settings: Partial<GymSettings>) => void;
   addActivity: (text: string, kind: ActivityEntry["kind"]) => void;
   resetDemoData: () => void;
+  addEquipment: (input: AddEquipmentInput) => InventoryItem;
+  updateEquipment: (
+    equipmentId: string,
+    updates: Partial<Pick<InventoryItem, "name" | "category" | "quantity" | "location" | "notes">>
+  ) => void;
+  logMaintenance: (equipmentId: string, note: string, condition: EquipmentCondition, cost?: number) => void;
+  deleteEquipment: (equipmentId: string) => void;
 }
 
 const GymContext = createContext<GymApi | null>(null);
@@ -72,6 +93,7 @@ export function GymStoreProvider({ children }: { children: ReactNode }) {
     payments: [],
     activity: [],
     notifications: [],
+    inventory: [],
     settings: {
       gymName: "Iron Peak Fitness",
       ownerName: "Admin",
@@ -244,6 +266,61 @@ export function GymStoreProvider({ children }: { children: ReactNode }) {
     []
   );
 
+  const addEquipment = useCallback(
+    (input: AddEquipmentInput): InventoryItem => {
+      const item: InventoryItem = {
+        id: uid("equip"),
+        name: input.name,
+        category: input.category,
+        quantity: input.quantity,
+        condition: input.condition,
+        location: input.location,
+        purchaseDate: input.purchaseDate,
+        notes: input.notes,
+        maintenanceHistory: [],
+      };
+      setState((prev) => ({ ...prev, inventory: [item, ...prev.inventory] }));
+      addActivity(`${input.name} added to inventory`, "equipment");
+      return item;
+    },
+    [addActivity]
+  );
+
+  const updateEquipment = useCallback(
+    (equipmentId: string, updates: Partial<Pick<InventoryItem, "name" | "category" | "quantity" | "location" | "notes">>) => {
+      setState((prev) => ({
+        ...prev,
+        inventory: prev.inventory.map((i) => (i.id === equipmentId ? { ...i, ...updates } : i)),
+      }));
+    },
+    []
+  );
+
+  const logMaintenance = useCallback(
+    (equipmentId: string, note: string, condition: EquipmentCondition, cost?: number) => {
+      setState((prev) => {
+        const item = prev.inventory.find((i) => i.id === equipmentId);
+        if (!item) return prev;
+        const now = new Date().toISOString();
+        const record = { id: uid("maint"), date: now, note, condition, cost };
+        const updated: InventoryItem = {
+          ...item,
+          condition,
+          lastServiceDate: now,
+          maintenanceHistory: [record, ...item.maintenanceHistory],
+        };
+        return { ...prev, inventory: prev.inventory.map((i) => (i.id === equipmentId ? updated : i)) };
+      });
+      const item = state.inventory.find((i) => i.id === equipmentId);
+      addActivity(`Maintenance logged for ${item ? item.name : "equipment"}`, "equipment");
+    },
+    [addActivity, state.inventory]
+  );
+
+  const deleteEquipment = useCallback((equipmentId: string) => {
+    setState((prev) => ({ ...prev, inventory: prev.inventory.filter((i) => i.id !== equipmentId) }));
+  }, []);
+
   const markNotificationRead = useCallback((id: string) => {
     setState((prev) => ({
       ...prev,
@@ -279,6 +356,10 @@ export function GymStoreProvider({ children }: { children: ReactNode }) {
       updateSettings,
       addActivity,
       resetDemoData,
+      addEquipment,
+      updateEquipment,
+      logMaintenance,
+      deleteEquipment,
     }),
     [
       state,
@@ -292,6 +373,10 @@ export function GymStoreProvider({ children }: { children: ReactNode }) {
       updateSettings,
       addActivity,
       resetDemoData,
+      addEquipment,
+      updateEquipment,
+      logMaintenance,
+      deleteEquipment,
     ]
   );
 
@@ -337,4 +422,20 @@ export function useDashboardStats() {
 
 export function computeExpiry(plan: Plan, startDate: string): string {
   return addMonths(startDate, PLAN_MONTHS[plan]).toISOString();
+}
+
+export function useInventoryStats() {
+  const { state } = useGym();
+  return useMemo(() => {
+    let good = 0;
+    let needsRepair = 0;
+    let outOfService = 0;
+    for (const item of state.inventory) {
+      if (item.condition === "Good") good++;
+      else if (item.condition === "Needs Repair") needsRepair++;
+      else outOfService++;
+    }
+    const totalUnits = state.inventory.reduce((sum, i) => sum + i.quantity, 0);
+    return { good, needsRepair, outOfService, total: state.inventory.length, totalUnits };
+  }, [state.inventory]);
 }

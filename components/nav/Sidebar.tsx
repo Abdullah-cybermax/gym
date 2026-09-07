@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutGrid, Users, Clock, CreditCard, BarChart3, Settings, Plus, Dumbbell } from "lucide-react";
+import { LayoutGrid, Users, Clock, CreditCard, Wrench, BarChart3, Settings, Plus, Dumbbell } from "lucide-react";
 import { useGym } from "@/lib/store";
 
 const ITEMS = [
@@ -10,6 +10,7 @@ const ITEMS = [
   { href: "/members", label: "Members", icon: Users, match: (p: string) => p.startsWith("/members") },
   { href: "/expiring", label: "Expiring Soon", icon: Clock, match: (p: string) => p.startsWith("/expiring") },
   { href: "/payments", label: "Payments", icon: CreditCard, match: (p: string) => p.startsWith("/payments") },
+  { href: "/inventory", label: "Inventory", icon: Wrench, match: (p: string) => p.startsWith("/inventory") },
   { href: "/reports", label: "Reports", icon: BarChart3, match: (p: string) => p.startsWith("/reports") },
   { href: "/settings", label: "Settings", icon: Settings, match: (p: string) => p.startsWith("/settings") },
 ];

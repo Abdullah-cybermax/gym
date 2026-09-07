@@ -2,8 +2,8 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { Users, Clock, XCircle, Wallet, UserPlus, CreditCard, Search, CalendarCheck, PartyPopper } from "lucide-react";
-import { useGym, useDashboardStats } from "@/lib/store";
+import { Users, Clock, XCircle, Wallet, UserPlus, CreditCard, Search, CalendarCheck, PartyPopper, Wrench, ChevronRight } from "lucide-react";
+import { useGym, useDashboardStats, useInventoryStats } from "@/lib/store";
 import { formatCurrency, formatDate, getMembershipStatus } from "@/lib/utils";
 import { KpiCard } from "@/components/KpiCard";
 import { StatusBadge, ExpiryText } from "@/components/ui/StatusBadge";
@@ -23,6 +23,8 @@ function greeting(): string {
 export default function GymDashboardPage() {
   const { state } = useGym();
   const stats = useDashboardStats();
+  const inventoryStats = useInventoryStats();
+  const equipmentNeedingAttention = inventoryStats.needsRepair + inventoryStats.outOfService;
   const [reminderMember, setReminderMember] = useState<Member | null>(null);
 
   const expiringMembers = useMemo(() => {
@@ -50,6 +52,21 @@ export default function GymDashboardPage() {
         <KpiCard icon={XCircle} label="Expired" value={String(stats.expired)} tone="danger" href="/members?filter=expired" />
         <KpiCard icon={Wallet} label="Today's Collections" value={formatCurrency(stats.todaysCollections)} tone="accent" href="/payments" />
       </div>
+
+      {equipmentNeedingAttention > 0 && (
+        <Link
+          href="/inventory"
+          className="mt-4 flex items-center gap-3 rounded-2xl border border-[var(--gym-warning)]/30 bg-[var(--gym-warning)]/10 p-3.5 transition active:scale-[0.99]"
+        >
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--gym-warning)]/15 text-[var(--gym-warning)]">
+            <Wrench size={16} />
+          </span>
+          <span className="flex-1 text-sm font-semibold text-[var(--gym-text)]">
+            {equipmentNeedingAttention} piece{equipmentNeedingAttention === 1 ? "" : "s"} of equipment need{equipmentNeedingAttention === 1 ? "s" : ""} attention
+          </span>
+          <ChevronRight size={16} className="shrink-0 text-[var(--gym-text-muted)]" />
+        </Link>
+      )}
 
       <section className="mt-7">
         <div className="mb-3 flex items-center justify-between">

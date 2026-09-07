@@ -1,6 +1,6 @@
 "use client";
 
-import { Bell, BellOff, CalendarClock, CreditCard, Info, XCircle } from "lucide-react";
+import { Bell, BellOff, CalendarClock, CreditCard, Info, XCircle, Wrench } from "lucide-react";
 import { useGym } from "@/lib/store";
 import { timeAgo } from "@/lib/utils";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -10,6 +10,7 @@ const ICONS: Record<NotificationKind, typeof Bell> = {
   expiring: CalendarClock,
   expired: XCircle,
   payment: CreditCard,
+  equipment: Wrench,
   info: Info,
 };
 
@@ -17,6 +18,7 @@ const COLORS: Record<NotificationKind, string> = {
   expiring: "text-[var(--gym-warning)] bg-[var(--gym-warning)]/10",
   expired: "text-[var(--gym-danger)] bg-[var(--gym-danger)]/10",
   payment: "text-[var(--gym-success)] bg-[var(--gym-success)]/10",
+  equipment: "text-[var(--gym-warning)] bg-[var(--gym-warning)]/10",
   info: "text-[var(--gym-accent)] bg-[var(--gym-accent)]/10",
 };
 

@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { BarChart3, Bell, Clock, Settings, ChevronRight, Dumbbell } from "lucide-react";
-import { useGym } from "@/lib/store";
+import { BarChart3, Bell, Clock, Settings, ChevronRight, Dumbbell, Wrench } from "lucide-react";
+import { useGym, useInventoryStats } from "@/lib/store";
 
 const ITEMS = [
   { href: "/expiring", label: "Expiring Soon", icon: Clock, tone: "warning" as const },
+  { href: "/inventory", label: "Inventory", icon: Wrench, tone: "warning" as const },
   { href: "/reports", label: "Reports", icon: BarChart3, tone: "accent" as const },
   { href: "/notifications", label: "Notifications", icon: Bell, tone: "success" as const },
   { href: "/settings", label: "Settings", icon: Settings, tone: "default" as const },
@@ -14,6 +15,8 @@ const ITEMS = [
 export default function MorePage() {
   const { state } = useGym();
   const unread = state.notifications.filter((n) => !n.read).length;
+  const inventoryStats = useInventoryStats();
+  const needsAttention = inventoryStats.needsRepair + inventoryStats.outOfService;
 
   return (
     <div className="px-4 pt-5 md:hidden">
@@ -50,6 +53,11 @@ export default function MorePage() {
               {item.href === "/notifications" && unread > 0 && (
                 <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-[var(--gym-danger)] px-1.5 text-[10px] font-bold text-white">
                   {unread}
+                </span>
+              )}
+              {item.href === "/inventory" && needsAttention > 0 && (
+                <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-[var(--gym-danger)] px-1.5 text-[10px] font-bold text-white">
+                  {needsAttention}
                 </span>
               )}
               <ChevronRight size={16} className="text-[var(--gym-text-muted)]" />

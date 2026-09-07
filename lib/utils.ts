@@ -1,4 +1,4 @@
-import type { Plan, Member, MembershipStatus } from "./types";
+import type { Plan, Member, MembershipStatus, EquipmentCategory, EquipmentCondition } from "./types";
 
 export const PLAN_MONTHS: Record<Plan, number> = {
   Monthly: 1,
@@ -15,6 +15,10 @@ export const PLAN_FEES: Record<Plan, number> = {
 };
 
 export const PLANS: Plan[] = ["Monthly", "3 Months", "6 Months", "Yearly"];
+
+export const EQUIPMENT_CATEGORIES: EquipmentCategory[] = ["Cardio", "Strength Machines", "Free Weights", "Accessories", "Other"];
+
+export const EQUIPMENT_CONDITIONS: EquipmentCondition[] = ["Good", "Needs Repair", "Out of Service"];
 
 export function addDays(date: Date | string, days: number): Date {
   const d = new Date(date);

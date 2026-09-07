@@ -1,4 +1,4 @@
-import { CalendarPlus, CreditCard, RefreshCcw, UserPlus, XCircle, MessageCircle } from "lucide-react";
+import { CalendarPlus, CreditCard, RefreshCcw, UserPlus, XCircle, MessageCircle, Wrench } from "lucide-react";
 import type { ActivityEntry } from "@/lib/types";
 import { timeAgo } from "@/lib/utils";
 
@@ -8,6 +8,7 @@ const ICONS: Record<ActivityEntry["kind"], typeof CreditCard> = {
   expired: XCircle,
   joined: UserPlus,
   reminder: MessageCircle,
+  equipment: Wrench,
 };
 
 const COLORS: Record<ActivityEntry["kind"], string> = {
@@ -16,6 +17,7 @@ const COLORS: Record<ActivityEntry["kind"], string> = {
   expired: "text-[var(--gym-danger)] bg-[var(--gym-danger)]/10",
   joined: "text-[var(--gym-warning)] bg-[var(--gym-warning)]/10",
   reminder: "text-[var(--gym-text)] bg-[var(--gym-surface-2)]",
+  equipment: "text-[var(--gym-warning)] bg-[var(--gym-warning)]/10",
 };
 
 export function ActivityItem({ activity }: { activity: ActivityEntry }) {

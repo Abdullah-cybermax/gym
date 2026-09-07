@@ -1,0 +1,85 @@
+@import "tailwindcss";
+
+:root {
+  --gym-bg: #0a0b0c;
+  --gym-surface: #151719;
+  --gym-surface-2: #1e2124;
+  --gym-border: #2a2d31;
+  --gym-text: #f5f6f7;
+  --gym-text-muted: #9aa0a6;
+  --gym-accent: #c6ff33;
+  --gym-accent-strong: #aee020;
+  --gym-success: #34d399;
+  --gym-warning: #f5a623;
+  --gym-danger: #ef4444;
+
+  --font-gym: "Inter", "Segoe UI", sans-serif;
+}
+
+.gym-app {
+  background: var(--gym-bg);
+  color: var(--gym-text);
+  font-family: var(--font-gym);
+  min-height: 100dvh;
+  -webkit-font-smoothing: antialiased;
+}
+
+.gym-app * {
+  border-color: var(--gym-border);
+}
+
+.gym-app ::selection {
+  background: var(--gym-accent);
+  color: #000;
+}
+
+@keyframes gym-toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes gym-sheet-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-toast-in {
+  animation: gym-toast-in 0.22s ease-out;
+}
+
+.animate-sheet-in {
+  animation: gym-sheet-in 0.22s ease-out;
+}
+
+.gym-app input,
+.gym-app textarea,
+.gym-app select {
+  font-family: inherit;
+}
+
+.gym-app input::placeholder,
+.gym-app textarea::placeholder {
+  color: var(--gym-text-muted);
+}
+
+.gym-app ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.gym-app ::-webkit-scrollbar-thumb {
+  background: var(--gym-border);
+  border-radius: 999px;
+}
